@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:RetroClip"
         Title="RetroClip"
-        Height="920"
+        Height="1000"
         Width="1280"
         MinHeight="860"
         MinWidth="1100"
@@ -16,9 +16,9 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*" MinHeight="360"/>
+                <RowDefinition Height="*" MinHeight="320"/>
                 <RowDefinition Height="16"/>
-                <RowDefinition Height="Auto" MinHeight="220"/>
+                <RowDefinition Height="*" MinHeight="280"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -46,41 +46,64 @@
                         BorderThickness="1"
                         CornerRadius="10"
                         Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="Capture"
-                                   FontSize="20"
-                                   FontWeight="SemiBold"
-                                   Foreground="#7FFFD4"/>
-                        <TextBlock Style="{StaticResource MutedText}"
-                                   Text="Buffer per-app audio, then save a clip."
-                                   Margin="0,4,0,14"/>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <TextBlock Style="{StaticResource LabelText}" Text="Application" Margin="0,0,0,8"/>
-                        <Grid Margin="0,0,0,6">
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="Capture"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7FFFD4"/>
+                            <TextBlock Style="{StaticResource MutedText}"
+                                       Text="Buffer per-app audio, then save a clip."
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource LabelText}"
+                                       Text="Application"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
                             <ComboBox x:Name="AppCombo"
-                                      Grid.Column="0"
+                                      Grid.Column="1"
                                       DisplayMemberPath="DisplayName"
                                       IsEditable="False"/>
-                            <Button Grid.Column="1"
+                            <Button Grid.Column="2"
                                     Content="Refresh"
                                     Style="{StaticResource PillButton}"
                                     Margin="8,0,0,0"
                                     Click="RefreshApps_Click"/>
                         </Grid>
-                        <TextBlock Style="{StaticResource MutedText}"
-                                   Text="Only apps currently outputting audio appear here."
-                                   Margin="0,0,0,14"
-                                   FontSize="12"/>
 
-                        <DockPanel Margin="0,0,0,8">
-                            <TextBlock Style="{StaticResource LabelText}" Text="Buffer length" VerticalAlignment="Center"/>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Grid Grid.Row="2" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource LabelText}"
+                                       Text="Buffer length"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,10,0">
                                 <TextBox x:Name="BufferSecondsBox"
                                          Width="56"
+                                         Padding="8,4"
                                          LostFocus="BufferSecondsBox_LostFocus"
                                          KeyDown="BufferSecondsBox_KeyDown"/>
                                 <TextBlock Text="s"
@@ -88,62 +111,57 @@
                                            Margin="6,0,0,0"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
-                        </DockPanel>
-                        <Slider x:Name="BufferSlider"
-                                Minimum="10"
-                                Maximum="120"
-                                Value="120"
-                                TickFrequency="1"
-                                IsSnapToTickEnabled="False"
-                                IsMoveToPointEnabled="True"
-                                ValueChanged="BufferSlider_ValueChanged"/>
-                        <TextBlock Style="{StaticResource MutedText}"
-                                   FontSize="12"
-                                   Margin="0,6,0,14"
-                                   Text="10–120 seconds. Type exact value (e.g. 21)."/>
+                            <Slider x:Name="BufferSlider"
+                                    Grid.Column="2"
+                                    Minimum="10"
+                                    Maximum="120"
+                                    Value="120"
+                                    TickFrequency="1"
+                                    IsSnapToTickEnabled="False"
+                                    IsMoveToPointEnabled="True"
+                                    VerticalAlignment="Center"
+                                    ValueChanged="BufferSlider_ValueChanged"/>
+                        </Grid>
 
-                        <WrapPanel Margin="0,0,0,14">
+                        <WrapPanel Grid.Row="3" Margin="0,0,0,10">
                             <Button x:Name="StartStopButton"
                                     Content="Start buffering"
                                     Style="{StaticResource AccentPillButton}"
                                     Click="StartStop_Click"
                                     MinWidth="130"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,0"/>
                             <Button x:Name="SaveButton"
                                     Content="Save clip"
                                     Style="{StaticResource PillButton}"
                                     Click="SaveClip_Click"
                                     IsEnabled="False"
                                     MinWidth="100"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,0"/>
                             <Button Content="Open folder"
                                     Style="{StaticResource PillButton}"
                                     Click="OpenFolder_Click"
-                                    MinWidth="100"
-                                    Margin="0,0,8,8"/>
+                                    MinWidth="100"/>
                         </WrapPanel>
 
-                        <DockPanel Margin="0,0,0,6">
-                            <TextBlock Style="{StaticResource LabelText}" Text="Buffered"/>
-                            <TextBlock x:Name="BufferStatusLabel"
-                                       DockPanel.Dock="Right"
-                                       Style="{StaticResource MutedText}"
-                                       Text="0.0s / 120s"/>
-                        </DockPanel>
-                        <ProgressBar x:Name="BufferProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,12"/>
+                        <StackPanel Grid.Row="4" Margin="0,0,0,8">
+                            <DockPanel Margin="0,0,0,4">
+                                <TextBlock Style="{StaticResource LabelText}" Text="Buffered"/>
+                                <TextBlock x:Name="BufferStatusLabel"
+                                           DockPanel.Dock="Right"
+                                           Style="{StaticResource MutedText}"
+                                           Text="0.0s / 120s"/>
+                            </DockPanel>
+                            <ProgressBar x:Name="BufferProgress" Minimum="0" Maximum="1" Value="0"/>
+                        </StackPanel>
 
-                        <Border Background="#1F1F1F"
-                                BorderBrush="#3D3D3D"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="12"
-                                MinHeight="56">
-                            <TextBlock x:Name="StatusText"
-                                       TextWrapping="Wrap"
-                                       Style="{StaticResource MutedText}"
-                                       Text="Pick an app that is playing sound, then start buffering. Press Ctrl+Shift+R to save."/>
-                        </Border>
-                    </StackPanel>
+                        <TextBlock x:Name="StatusText"
+                                   Grid.Row="5"
+                                   VerticalAlignment="Bottom"
+                                   TextWrapping="Wrap"
+                                   Style="{StaticResource MutedText}"
+                                   FontSize="12"
+                                   Text="Pick an app that is playing sound, then start buffering. Ctrl+Shift+R saves."/>
+                    </Grid>
                 </Border>
 
                 <!-- Edit -->
