@@ -1,0 +1,123 @@
+<UserControl x:Class="RetroClip.ClipPlaybackPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Playback / stream"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="#7FFFD4"/>
+            <TextBlock Style="{StaticResource MutedText}"
+                       Text="Own clip picker — separate from Edit. Plays the full selected clip."
+                       Margin="0,4,0,0"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Style="{StaticResource LabelText}"
+                       Text="Clip"
+                       VerticalAlignment="Center"
+                       Margin="0,0,10,0"/>
+            <ComboBox x:Name="ClipCombo"
+                      Grid.Column="1"
+                      DisplayMemberPath="FileName"
+                      SelectionChanged="ClipCombo_SelectionChanged"/>
+            <Button Grid.Column="2"
+                    Content="Refresh"
+                    Style="{StaticResource PillButton}"
+                    Margin="8,0,0,0"
+                    Click="RefreshClips_Click"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="260"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*" MinWidth="260"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto" MinWidth="220"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <DockPanel Margin="0,0,0,8">
+                    <TextBlock Style="{StaticResource LabelText}" Text="Preview output" VerticalAlignment="Center"/>
+                    <Button DockPanel.Dock="Right"
+                            Content="Refresh"
+                            Style="{StaticResource PillButton}"
+                            Padding="10,4"
+                            Click="RefreshDevices_Click"/>
+                </DockPanel>
+                <ComboBox x:Name="PreviewOutputCombo" DisplayMemberPath="FriendlyName"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Style="{StaticResource LabelText}" Text="Stream to virtual mic" Margin="0,0,0,8"/>
+                <ComboBox x:Name="StreamTargetCombo"
+                          DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,8"/>
+                <CheckBox x:Name="AlsoHearLocallyCheck"
+                          Content="Also hear locally (preview output)"
+                          IsChecked="True"
+                          Margin="0,0,0,8"/>
+                <TextBlock Style="{StaticResource MutedText}"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Text="Stream: Voicemeeter Input · Discord: Voicemeeter Out B1 · Fifine on VoiceMeeter HW input."/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="4" VerticalAlignment="Top" MinWidth="220">
+                <TextBlock Style="{StaticResource LabelText}" Text="Transport" Margin="0,0,0,8"/>
+                <DockPanel Margin="0,0,0,6">
+                    <TextBlock Style="{StaticResource MutedText}" Text="Playback"/>
+                    <TextBlock x:Name="PlaybackLabel"
+                               DockPanel.Dock="Right"
+                               Style="{StaticResource MutedText}"
+                               Text="Stopped"/>
+                </DockPanel>
+                <ProgressBar x:Name="PlaybackProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,10"/>
+                <WrapPanel>
+                    <Button x:Name="PreviewButton"
+                            Content="Preview"
+                            Style="{StaticResource AccentPillButton}"
+                            Click="Preview_Click"
+                            MinWidth="90"
+                            Margin="0,0,8,8"/>
+                    <Button Content="Stream"
+                            Style="{StaticResource AccentPillButton}"
+                            Click="Stream_Click"
+                            MinWidth="90"
+                            Margin="0,0,8,8"/>
+                    <Button Content="Stop"
+                            Style="{StaticResource PillButton}"
+                            Click="Stop_Click"
+                            MinWidth="80"
+                            Margin="0,0,8,8"/>
+                </WrapPanel>
+                <Border Background="#1F1F1F"
+                        BorderBrush="#3D3D3D"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="10"
+                        MinHeight="48"
+                        Margin="0,4,0,0">
+                    <TextBlock x:Name="StatusText"
+                               TextWrapping="Wrap"
+                               Style="{StaticResource MutedText}"
+                               FontSize="12"
+                               Text="Ready."/>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
