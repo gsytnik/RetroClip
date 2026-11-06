@@ -117,7 +117,8 @@
                 <TextBlock Style="{StaticResource LabelText}" Text="Preview trim" Margin="0,0,0,6"/>
                 <ComboBox x:Name="PreviewOutputCombo"
                           DisplayMemberPath="FriendlyName"
-                          Margin="0,0,0,8"/>
+                          Margin="0,0,0,8"
+                          SelectionChanged="PreviewOutputCombo_SelectionChanged"/>
                 <WrapPanel>
                     <Button x:Name="PreviewButton"
                             Content="Preview"

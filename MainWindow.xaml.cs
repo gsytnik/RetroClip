@@ -12,11 +12,13 @@ public partial class MainWindow : Window
 {
     private readonly RetroCaptureService _capture = new();
     private readonly DispatcherTimer _uiTimer;
+    private readonly UiPreferencesStore _preferences = new();
     private HotkeyService? _hotkey;
     private readonly string _clipsDirectory =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "RetroClip");
     private AudioAppInfo? _activeApp;
     private bool _starting;
+    private bool _suppressPreferenceSave;
 
     public MainWindow()
     {
@@ -33,16 +35,25 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
 
-        BufferSlider.Value = RetroCaptureService.MaxBufferSeconds;
+        _suppressPreferenceSave = true;
+        BufferSlider.Value = _preferences.Current.BufferSeconds
+            is int savedBuffer
+            && savedBuffer >= RetroCaptureService.MinBufferSeconds
+            && savedBuffer <= RetroCaptureService.MaxBufferSeconds
+            ? savedBuffer
+            : RetroCaptureService.MaxBufferSeconds;
         SyncBufferSecondsBox();
+        _suppressPreferenceSave = false;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Directory.CreateDirectory(_clipsDirectory);
-        PlaybackPanel.Initialize(_clipsDirectory, EditPanel.StopPreview);
-        EditPanel.Initialize(_clipsDirectory, PlaybackPanel.StopPlayback);
+        PlaybackPanel.Initialize(_clipsDirectory, _preferences, EditPanel.StopPreview);
+        EditPanel.Initialize(_clipsDirectory, _preferences, PlaybackPanel.StopPlayback);
         RefreshApps();
+        ApplyBufferSeconds((int)Math.Round(BufferSlider.Value));
+        PersistCapturePreferences();
 
         try
         {
@@ -59,15 +70,42 @@ public partial class MainWindow : Window
     private async void OnClosed(object? sender, EventArgs e)
     {
         _uiTimer.Stop();
+        PersistCapturePreferences();
+        EditPanel.PersistPreferences();
+        PlaybackPanel.PersistPreferences();
         _hotkey?.Dispose();
         await _capture.DisposeAsync();
     }
 
+    private void PersistCapturePreferences()
+    {
+        if (_suppressPreferenceSave)
+        {
+            return;
+        }
+
+        _preferences.Current.CaptureProcessName =
+            (AppCombo.SelectedItem as AudioAppInfo)?.ProcessName;
+        _preferences.Current.BufferSeconds = (int)Math.Round(BufferSlider.Value);
+        _preferences.Save();
+    }
+
     private void RefreshApps_Click(object sender, RoutedEventArgs e) => RefreshApps();
+
+    private void AppCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        PersistCapturePreferences();
+    }
 
     private void RefreshApps()
     {
         var selectedId = (AppCombo.SelectedItem as AudioAppInfo)?.ProcessId;
+        var preferredName = _preferences.Current.CaptureProcessName;
         var apps = AudioAppEnumerator.ListActiveRenderApps();
         AppCombo.ItemsSource = apps;
 
@@ -76,10 +114,19 @@ public partial class MainWindow : Window
             AppCombo.SelectedItem = apps.FirstOrDefault(a => a.ProcessId == id);
         }
 
+        if (AppCombo.SelectedItem is null
+            && !string.IsNullOrWhiteSpace(preferredName))
+        {
+            AppCombo.SelectedItem = apps.FirstOrDefault(a =>
+                string.Equals(a.ProcessName, preferredName, StringComparison.OrdinalIgnoreCase));
+        }
+
         if (AppCombo.SelectedItem is null && apps.Count > 0)
         {
             AppCombo.SelectedIndex = 0;
         }
+
+        PersistCapturePreferences();
 
         SetStatus(apps.Count == 0
             ? "No apps with active audio sessions found. Start playback in Discord/WoW/etc., then refresh."
@@ -137,6 +184,7 @@ public partial class MainWindow : Window
         {
             _capture.BufferSeconds = seconds;
             UpdateBufferUi();
+            PersistCapturePreferences();
         }
         catch (Exception ex)
         {

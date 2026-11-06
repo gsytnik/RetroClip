@@ -2,87 +2,168 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="320"/>
-            <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="*" MinWidth="360"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="180"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- Transport / devices -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*" MinWidth="340"/>
+            </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="Playback / stream"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Foreground="#7FFFD4"/>
-                <TextBlock Style="{StaticResource MutedText}"
-                           FontSize="12"
-                           Text="Full-clip preview / stream · separate from Edit."
-                           Margin="0,4,0,0"
-                           TextWrapping="Wrap"/>
-            </StackPanel>
+            <!-- Playback / stream -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <Grid Grid.Row="1" Margin="0,0,0,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*" MinWidth="120"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Style="{StaticResource LabelText}"
-                           Text="Clip"
-                           VerticalAlignment="Center"
-                           Margin="0,0,10,0"/>
-                <ComboBox x:Name="ClipCombo"
-                          Grid.Column="1"
-                          DisplayMemberPath="FileName"
-                          SelectionChanged="ClipCombo_SelectionChanged"/>
-                <Button Grid.Column="2"
-                        Content="Refresh"
-                        Style="{StaticResource PillButton}"
-                        Margin="8,0,0,0"
-                        Click="RefreshClips_Click"/>
-            </Grid>
+                <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                    <TextBlock Text="Playback / stream"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="#7FFFD4"/>
+                    <TextBlock Style="{StaticResource MutedText}"
+                               FontSize="12"
+                               Text="Full-clip preview / stream."
+                               Margin="0,4,0,0"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
 
-            <StackPanel Grid.Row="2" Margin="0,0,0,8">
-                <DockPanel Margin="0,0,0,4">
-                    <TextBlock Style="{StaticResource LabelText}" Text="Preview output" VerticalAlignment="Center"/>
-                    <Button DockPanel.Dock="Right"
+                <Grid Grid.Row="1" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*" MinWidth="120"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource LabelText}"
+                               Text="Clip"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <ComboBox x:Name="ClipCombo"
+                              Grid.Column="1"
+                              DisplayMemberPath="FileName"
+                              SelectionChanged="ClipCombo_SelectionChanged"/>
+                    <Button Grid.Column="2"
                             Content="Refresh"
                             Style="{StaticResource PillButton}"
-                            Padding="10,4"
-                            Click="RefreshDevices_Click"/>
-                </DockPanel>
-                <ComboBox x:Name="PreviewOutputCombo"
-                          DisplayMemberPath="FriendlyName"
-                          Margin="0,0,0,8"/>
+                            Margin="8,0,0,0"
+                            Click="RefreshClips_Click"/>
+                </Grid>
 
-                <TextBlock Style="{StaticResource LabelText}" Text="Stream to virtual mic" Margin="0,0,0,4"/>
-                <ComboBox x:Name="StreamTargetCombo"
-                          DisplayMemberPath="FriendlyName"
-                          Margin="0,0,0,6"/>
-                <CheckBox x:Name="AlsoHearLocallyCheck"
-                          Content="Also hear locally"
-                          IsChecked="True"/>
-            </StackPanel>
+                <StackPanel Grid.Row="2">
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock Style="{StaticResource LabelText}" Text="Preview output" VerticalAlignment="Center"/>
+                        <Button DockPanel.Dock="Right"
+                                Content="Refresh"
+                                Style="{StaticResource PillButton}"
+                                Padding="10,4"
+                                Click="RefreshDevices_Click"/>
+                    </DockPanel>
+                    <ComboBox x:Name="PreviewOutputCombo"
+                              DisplayMemberPath="FriendlyName"
+                              Margin="0,0,0,8"
+                              SelectionChanged="PlaybackDevice_SelectionChanged"/>
 
-            <StackPanel Grid.Row="3">
-                <DockPanel Margin="0,0,0,4">
-                    <TextBlock Style="{StaticResource LabelText}" Text="Transport" VerticalAlignment="Center"/>
+                    <TextBlock Style="{StaticResource LabelText}" Text="Stream to virtual mic" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="StreamTargetCombo"
+                              DisplayMemberPath="FriendlyName"
+                              Margin="0,0,0,6"
+                              SelectionChanged="PlaybackDevice_SelectionChanged"/>
+                    <CheckBox x:Name="AlsoHearLocallyCheck"
+                              Content="Also hear locally"
+                              IsChecked="True"
+                              Checked="AlsoHearLocallyCheck_Changed"
+                              Unchecked="AlsoHearLocallyCheck_Changed"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Soundboard -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                    <TextBlock Text="Soundboard"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="#7FFFD4"/>
+                    <TextBlock Style="{StaticResource MutedText}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0"
+                               Text="Left-click streams · right-click Assign / Clear."/>
+                </StackPanel>
+
+                <Grid Grid.Row="1" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*" MinWidth="120"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource LabelText}"
+                               Text="Clip"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <ComboBox x:Name="SoundboardClipCombo"
+                              Grid.Column="1"
+                              DisplayMemberPath="FileName"
+                              SelectionChanged="SoundboardClipCombo_SelectionChanged"/>
+                    <Button Grid.Column="2"
+                            Content="Refresh"
+                            Style="{StaticResource PillButton}"
+                            Margin="8,0,0,0"
+                            Click="RefreshClips_Click"/>
+                </Grid>
+
+                <UniformGrid x:Name="SoundboardGrid"
+                             Grid.Row="2"
+                             Rows="4"
+                             Columns="4"/>
+            </Grid>
+        </Grid>
+
+        <!-- Shared transport under both sections -->
+        <Border Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="0,10,0,0"
+                BorderBrush="#3D3D3D"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <TextBlock Style="{StaticResource LabelText}" Text="Transport"/>
                     <TextBlock x:Name="PlaybackLabel"
-                               DockPanel.Dock="Right"
                                Style="{StaticResource MutedText}"
+                               FontSize="12"
+                               Margin="0,8,0,0"
                                Text="Stopped"/>
-                </DockPanel>
-                <ProgressBar x:Name="PlaybackProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,8"/>
-                <WrapPanel>
+                </StackPanel>
+
+                <ProgressBar x:Name="PlaybackProgress"
+                             Grid.Column="1"
+                             Minimum="0"
+                             Maximum="1"
+                             Value="0"
+                             Height="10"
+                             VerticalAlignment="Center"
+                             Margin="0,0,16,0"/>
+
+                <WrapPanel Grid.Column="2" VerticalAlignment="Center">
                     <Button x:Name="PreviewButton"
                             Content="Preview"
                             Style="{StaticResource AccentPillButton}"
@@ -99,41 +180,15 @@
                             Click="Stop_Click"
                             MinWidth="72"/>
                 </WrapPanel>
-            </StackPanel>
+            </Grid>
+        </Border>
 
-            <TextBlock x:Name="StatusText"
-                       Grid.Row="4"
-                       VerticalAlignment="Bottom"
-                       TextWrapping="Wrap"
-                       Style="{StaticResource MutedText}"
-                       FontSize="12"
-                       Margin="0,10,0,0"
-                       Text="Ready."/>
-        </Grid>
-
-        <!-- Soundboard -->
-        <Grid Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0" Margin="0,0,0,8">
-                <TextBlock Text="Soundboard"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Foreground="#7FFFD4"/>
-                <TextBlock Style="{StaticResource MutedText}"
-                           FontSize="12"
-                           TextWrapping="Wrap"
-                           Margin="0,4,0,0"
-                           Text="Left-click streams · right-click Assign / Clear."/>
-            </StackPanel>
-
-            <UniformGrid x:Name="SoundboardGrid"
-                         Grid.Row="1"
-                         Rows="4"
-                         Columns="4"/>
-        </Grid>
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="2"
+                   TextWrapping="Wrap"
+                   Style="{StaticResource MutedText}"
+                   FontSize="12"
+                   Margin="0,10,0,0"
+                   Text="Ready."/>
     </Grid>
 </UserControl>

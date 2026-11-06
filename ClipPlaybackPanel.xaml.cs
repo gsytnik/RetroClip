@@ -18,10 +18,13 @@ public partial class ClipPlaybackPanel : UserControl
     private string? _preferredPreviewDeviceId;
     private string? _preferredStreamDeviceId;
     private string? _preferredClipPath;
+    private string? _preferredSoundboardClipPath;
     private bool _suppressSelectionHandler;
+    private bool _suppressPreferenceSave;
     private bool _initialized;
     private TimeSpan _clipDuration = TimeSpan.Zero;
     private Action? _stopEditPreview;
+    private UiPreferencesStore? _preferences;
 
     public ClipPlaybackPanel()
     {
@@ -42,16 +45,54 @@ public partial class ClipPlaybackPanel : UserControl
         };
     }
 
-    public void Initialize(string clipsDirectory, Action? stopEditPreview = null)
+    public void Initialize(
+        string clipsDirectory,
+        UiPreferencesStore preferences,
+        Action? stopEditPreview = null)
     {
         _clipsDirectory = clipsDirectory;
+        _preferences = preferences;
         _stopEditPreview = stopEditPreview;
         Directory.CreateDirectory(_clipsDirectory);
         _soundboard = new SoundboardStore(_clipsDirectory);
+        _preferredPreviewDeviceId = preferences.Current.PlaybackPreviewDeviceId;
+        _preferredStreamDeviceId = preferences.Current.PlaybackStreamDeviceId;
+        _preferredClipPath = preferences.Current.PlaybackClipPath;
+        _preferredSoundboardClipPath = preferences.Current.SoundboardClipPath;
         _initialized = true;
-        RefreshDevices();
-        RefreshClips(forceSelectPreferred: true);
-        RefreshSoundboardPads();
+        _suppressPreferenceSave = true;
+        try
+        {
+            AlsoHearLocallyCheck.IsChecked = preferences.Current.AlsoHearLocally;
+            RefreshDevices();
+            RefreshClips(forceSelectPreferred: true);
+            RefreshSoundboardPads();
+        }
+        finally
+        {
+            _suppressPreferenceSave = false;
+        }
+
+        PersistPreferences();
+    }
+
+    public void PersistPreferences()
+    {
+        if (_preferences is null || !_initialized)
+        {
+            return;
+        }
+
+        _preferences.Current.PlaybackPreviewDeviceId =
+            (PreviewOutputCombo.SelectedItem as AudioOutputDeviceInfo)?.Id ?? _preferredPreviewDeviceId;
+        _preferences.Current.PlaybackStreamDeviceId =
+            (StreamTargetCombo.SelectedItem as AudioOutputDeviceInfo)?.Id ?? _preferredStreamDeviceId;
+        _preferences.Current.PlaybackClipPath =
+            (ClipCombo.SelectedItem as ClipInfo)?.Path ?? _preferredClipPath;
+        _preferences.Current.SoundboardClipPath =
+            (SoundboardClipCombo.SelectedItem as ClipInfo)?.Path ?? _preferredSoundboardClipPath;
+        _preferences.Current.AlsoHearLocally = AlsoHearLocallyCheck.IsChecked == true;
+        _preferences.Save();
     }
 
     public void NotifyClipSaved(string path)
@@ -61,8 +102,9 @@ public partial class ClipPlaybackPanel : UserControl
             return;
         }
 
-        var currentPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
-        RefreshClips(preservePath: currentPath, forceSelectPreferred: false);
+        var playbackPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
+        var soundboardPath = (SoundboardClipCombo.SelectedItem as ClipInfo)?.Path;
+        RefreshClips(preservePlaybackPath: playbackPath, preserveSoundboardPath: soundboardPath, forceSelectPreferred: false);
         RefreshSoundboardPads();
         SetStatus($"Library updated · new clip {Path.GetFileName(path)}");
     }
@@ -82,11 +124,11 @@ public partial class ClipPlaybackPanel : UserControl
             var button = new Button
             {
                 Style = (Style)FindResource("SoundboardPadButton"),
-                Margin = new Thickness(3),
+                Margin = new Thickness(2),
                 Tag = index
             };
 
-            var assignItem = new MenuItem { Header = "Assign selected clip" };
+            var assignItem = new MenuItem { Header = "Assign soundboard clip" };
             assignItem.Click += (_, _) => AssignPad(index);
 
             var clearItem = new MenuItem { Header = "Clear" };
@@ -146,19 +188,19 @@ public partial class ClipPlaybackPanel : UserControl
         button.Content = new TextBlock
         {
             Text = label,
-            FontSize = 12,
+            FontSize = 11,
             FontWeight = FontWeights.SemiBold,
             Foreground = foreground,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            TextWrapping = TextWrapping.Wrap,
+            TextWrapping = TextWrapping.NoWrap,
             TextAlignment = TextAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            MaxHeight = 40,
-            ToolTip = string.IsNullOrWhiteSpace(path) ? "Right-click to assign the selected clip" : path
+            MaxHeight = 28,
+            ToolTip = string.IsNullOrWhiteSpace(path) ? "Right-click to assign the soundboard clip" : path
         };
         button.ToolTip = string.IsNullOrWhiteSpace(path)
-            ? "Right-click to assign the selected clip"
+            ? "Right-click to assign the soundboard clip"
             : path;
     }
 
@@ -169,9 +211,9 @@ public partial class ClipPlaybackPanel : UserControl
             return;
         }
 
-        if (ClipCombo.SelectedItem is not ClipInfo clip)
+        if (SoundboardClipCombo.SelectedItem is not ClipInfo clip)
         {
-            SetStatus("Select a clip in the picker first, then Assign.", isError: true);
+            SetStatus("Select a clip in the soundboard picker first, then Assign.", isError: true);
             return;
         }
 
@@ -206,7 +248,7 @@ public partial class ClipPlaybackPanel : UserControl
         var path = _soundboard.GetPath(index);
         if (string.IsNullOrWhiteSpace(path))
         {
-            SetStatus($"Pad {index + 1} is empty. Right-click → Assign selected clip.", isError: true);
+            SetStatus($"Pad {index + 1} is empty. Right-click → Assign soundboard clip.", isError: true);
             return;
         }
 
@@ -241,38 +283,55 @@ public partial class ClipPlaybackPanel : UserControl
 
     private void RefreshClips_Click(object sender, RoutedEventArgs e)
     {
-        var currentPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
-        RefreshClips(preservePath: currentPath, forceSelectPreferred: false);
+        var playbackPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
+        var soundboardPath = (SoundboardClipCombo.SelectedItem as ClipInfo)?.Path;
+        RefreshClips(preservePlaybackPath: playbackPath, preserveSoundboardPath: soundboardPath, forceSelectPreferred: false);
         RefreshSoundboardPads();
-        SetStatus($"Loaded {ClipLibrary.ListClips(_clipsDirectory).Count} clip(s) for playback.");
+        SetStatus($"Loaded {ClipLibrary.ListClips(_clipsDirectory).Count} clip(s).");
     }
 
-    private void RefreshClips(string? preservePath = null, bool forceSelectPreferred = false)
+    private void RefreshClips(
+        string? preservePlaybackPath = null,
+        string? preserveSoundboardPath = null,
+        bool forceSelectPreferred = false)
     {
         var clips = ClipLibrary.ListClips(_clipsDirectory);
-        var previousPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
+        var previousPlaybackPath = (ClipCombo.SelectedItem as ClipInfo)?.Path;
+        var previousSoundboardPath = (SoundboardClipCombo.SelectedItem as ClipInfo)?.Path;
 
-        ClipInfo? selected = null;
+        ClipInfo? playbackSelected = null;
         if (forceSelectPreferred && !string.IsNullOrWhiteSpace(_preferredClipPath))
         {
-            selected = clips.FirstOrDefault(c =>
+            playbackSelected = clips.FirstOrDefault(c =>
                 string.Equals(c.Path, _preferredClipPath, StringComparison.OrdinalIgnoreCase));
         }
 
-        selected ??= ResolveClip(clips, preservePath)
-                     ?? ResolveClip(clips, previousPath)
-                     ?? clips.FirstOrDefault();
+        playbackSelected ??= ResolveClip(clips, preservePlaybackPath)
+                             ?? ResolveClip(clips, previousPlaybackPath)
+                             ?? clips.FirstOrDefault();
+
+        ClipInfo? soundboardSelected = null;
+        if (forceSelectPreferred && !string.IsNullOrWhiteSpace(_preferredSoundboardClipPath))
+        {
+            soundboardSelected = clips.FirstOrDefault(c =>
+                string.Equals(c.Path, _preferredSoundboardClipPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        soundboardSelected ??= ResolveClip(clips, preserveSoundboardPath)
+                               ?? ResolveClip(clips, previousSoundboardPath)
+                               ?? clips.FirstOrDefault();
 
         _preferredClipPath = null;
+        _preferredSoundboardClipPath = null;
 
-        var sameSelection = selected is not null
-                            && !string.IsNullOrWhiteSpace(previousPath)
-                            && string.Equals(selected.Path, previousPath, StringComparison.OrdinalIgnoreCase);
+        var samePlaybackSelection = playbackSelected is not null
+                                    && !string.IsNullOrWhiteSpace(previousPlaybackPath)
+                                    && string.Equals(playbackSelected.Path, previousPlaybackPath, StringComparison.OrdinalIgnoreCase);
 
-        _suppressSelectionHandler = sameSelection
+        _suppressSelectionHandler = samePlaybackSelection
                                     || (!forceSelectPreferred
-                                        && selected is not null
-                                        && string.Equals(selected.Path, preservePath, StringComparison.OrdinalIgnoreCase));
+                                        && playbackSelected is not null
+                                        && string.Equals(playbackSelected.Path, preservePlaybackPath, StringComparison.OrdinalIgnoreCase));
         try
         {
             if (!_suppressSelectionHandler)
@@ -281,10 +340,12 @@ public partial class ClipPlaybackPanel : UserControl
             }
 
             ClipCombo.ItemsSource = clips;
-            ClipCombo.SelectedItem = selected;
-            if (selected is not null)
+            ClipCombo.SelectedItem = playbackSelected;
+            SoundboardClipCombo.ItemsSource = clips;
+            SoundboardClipCombo.SelectedItem = soundboardSelected;
+            if (playbackSelected is not null)
             {
-                _clipDuration = selected.Duration;
+                _clipDuration = playbackSelected.Duration;
             }
         }
         finally
@@ -328,6 +389,48 @@ public partial class ClipPlaybackPanel : UserControl
         {
             _clipDuration = TimeSpan.Zero;
         }
+
+        PersistPreferences();
+    }
+
+    private void SoundboardClipCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressPreferenceSave || !_initialized)
+        {
+            return;
+        }
+
+        PersistPreferences();
+    }
+
+    private void PlaybackDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressPreferenceSave || !_initialized)
+        {
+            return;
+        }
+
+        if (PreviewOutputCombo.SelectedItem is AudioOutputDeviceInfo preview)
+        {
+            _preferredPreviewDeviceId = preview.Id;
+        }
+
+        if (StreamTargetCombo.SelectedItem is AudioOutputDeviceInfo stream)
+        {
+            _preferredStreamDeviceId = stream.Id;
+        }
+
+        PersistPreferences();
+    }
+
+    private void AlsoHearLocallyCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppressPreferenceSave || !_initialized)
+        {
+            return;
+        }
+
+        PersistPreferences();
     }
 
     private void RefreshDevices_Click(object sender, RoutedEventArgs e)
@@ -395,6 +498,7 @@ public partial class ClipPlaybackPanel : UserControl
         }
 
         _preferredPreviewDeviceId = device.Id;
+        PersistPreferences();
         StartPlayback(path, duration, device.Id, null, $"Preview → {device.FriendlyName}", fileName);
     }
 
@@ -437,6 +541,7 @@ public partial class ClipPlaybackPanel : UserControl
         }
 
         _preferredStreamDeviceId = device.Id;
+        PersistPreferences();
         StartPlayback(path, duration, device.Id, localId, $"Stream → {device.FriendlyName}{localNote}", fileName);
     }
 

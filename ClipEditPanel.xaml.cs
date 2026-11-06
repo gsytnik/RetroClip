@@ -19,7 +19,9 @@ public partial class ClipEditPanel : UserControl
     private string? _preferredPath;
     private string? _preferredPreviewDeviceId;
     private bool _initialized;
+    private bool _suppressPreferenceSave;
     private Action? _stopPlayback;
+    private UiPreferencesStore? _preferences;
 
     private ClipInfo? SelectedClip => ClipCombo.SelectedItem as ClipInfo;
 
@@ -47,14 +49,43 @@ public partial class ClipEditPanel : UserControl
         };
     }
 
-    public void Initialize(string clipsDirectory, Action? stopPlayback = null)
+    public void Initialize(
+        string clipsDirectory,
+        UiPreferencesStore preferences,
+        Action? stopPlayback = null)
     {
         _clipsDirectory = clipsDirectory;
+        _preferences = preferences;
         _stopPlayback = stopPlayback;
         Directory.CreateDirectory(_clipsDirectory);
+        _preferredPreviewDeviceId = preferences.Current.EditPreviewDeviceId;
+        _preferredPath = preferences.Current.EditClipPath;
         _initialized = true;
-        RefreshPreviewDevices();
-        RefreshClips(forceSelectPreferred: true);
+        _suppressPreferenceSave = true;
+        try
+        {
+            RefreshPreviewDevices();
+            RefreshClips(forceSelectPreferred: true);
+        }
+        finally
+        {
+            _suppressPreferenceSave = false;
+        }
+
+        PersistPreferences();
+    }
+
+    public void PersistPreferences()
+    {
+        if (_preferences is null || !_initialized)
+        {
+            return;
+        }
+
+        _preferences.Current.EditPreviewDeviceId =
+            (PreviewOutputCombo.SelectedItem as AudioOutputDeviceInfo)?.Id ?? _preferredPreviewDeviceId;
+        _preferences.Current.EditClipPath = SelectedClip?.Path ?? _preferredPath;
+        _preferences.Save();
     }
 
     public void StopPreview()
@@ -141,6 +172,21 @@ public partial class ClipEditPanel : UserControl
             string.Equals(c.Path, path, StringComparison.OrdinalIgnoreCase));
     }
 
+    private void PreviewOutputCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressPreferenceSave || !_initialized)
+        {
+            return;
+        }
+
+        if (PreviewOutputCombo.SelectedItem is AudioOutputDeviceInfo device)
+        {
+            _preferredPreviewDeviceId = device.Id;
+        }
+
+        PersistPreferences();
+    }
+
     private void ClipCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressSelectionHandler)
@@ -176,6 +222,7 @@ public partial class ClipEditPanel : UserControl
         SaveNameBox.Text = Path.GetFileNameWithoutExtension(clip.FileName) + "_trim";
         UpdateSelectionLabels();
         SetStatus($"Ready: {clip.FileName} ({clip.Duration.TotalSeconds:0.##}s)");
+        PersistPreferences();
     }
 
     private void TrimSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -315,6 +362,7 @@ public partial class ClipEditPanel : UserControl
         {
             _stopPlayback?.Invoke();
             _preferredPreviewDeviceId = device.Id;
+            PersistPreferences();
             _previewPlayer.PlayRange(clip.Path, start, end, device.Id);
             _previewTimer.Start();
             PreviewButton.Content = "Playing…";

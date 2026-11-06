@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:RetroClip"
         Title="RetroClip"
-        Height="1000"
+        Height="1040"
         Width="1280"
-        MinHeight="860"
+        MinHeight="900"
         MinWidth="1100"
         WindowStartupLocation="CenterScreen"
         Background="#1F1F1F"
@@ -18,7 +18,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*" MinHeight="320"/>
                 <RowDefinition Height="16"/>
-                <RowDefinition Height="*" MinHeight="280"/>
+                <RowDefinition Height="*" MinHeight="300"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -79,7 +79,8 @@
                             <ComboBox x:Name="AppCombo"
                                       Grid.Column="1"
                                       DisplayMemberPath="DisplayName"
-                                      IsEditable="False"/>
+                                      IsEditable="False"
+                                      SelectionChanged="AppCombo_SelectionChanged"/>
                             <Button Grid.Column="2"
                                     Content="Refresh"
                                     Style="{StaticResource PillButton}"
