@@ -14,6 +14,7 @@ public partial class ClipEditPanel : UserControl
     private readonly ClipPlayer _previewPlayer = new();
     private readonly DispatcherTimer _previewTimer;
     private string _clipsDirectory = string.Empty;
+    private IReadOnlyList<ClipInfo> _allClips = Array.Empty<ClipInfo>();
     private bool _updatingSliders;
     private bool _suppressSelectionHandler;
     private string? _preferredPath;
@@ -21,7 +22,11 @@ public partial class ClipEditPanel : UserControl
     private bool _initialized;
     private bool _suppressPreferenceSave;
     private Action? _stopPlayback;
+    private Action<TimeSpan, TimeSpan, string>? _reportTransportProgress;
+    private Action? _clearTransportProgress;
     private UiPreferencesStore? _preferences;
+    private TimeSpan _previewStart;
+    private TimeSpan _previewDuration;
 
     private ClipInfo? SelectedClip => ClipCombo.SelectedItem as ClipInfo;
 
@@ -31,15 +36,9 @@ public partial class ClipEditPanel : UserControl
 
         _previewTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(100)
+            Interval = TimeSpan.FromMilliseconds(50)
         };
-        _previewTimer.Tick += (_, _) =>
-        {
-            if (_previewPlayer.State != PlaybackState.Playing)
-            {
-                OnPreviewStoppedUi();
-            }
-        };
+        _previewTimer.Tick += (_, _) => UpdatePreviewTransportProgress();
         _previewPlayer.PlaybackStopped += (_, _) => Dispatcher.BeginInvoke(OnPreviewStoppedUi);
 
         Unloaded += (_, _) =>
@@ -52,11 +51,15 @@ public partial class ClipEditPanel : UserControl
     public void Initialize(
         string clipsDirectory,
         UiPreferencesStore preferences,
-        Action? stopPlayback = null)
+        Action? stopPlayback = null,
+        Action<TimeSpan, TimeSpan, string>? reportTransportProgress = null,
+        Action? clearTransportProgress = null)
     {
         _clipsDirectory = clipsDirectory;
         _preferences = preferences;
         _stopPlayback = stopPlayback;
+        _reportTransportProgress = reportTransportProgress;
+        _clearTransportProgress = clearTransportProgress;
         Directory.CreateDirectory(_clipsDirectory);
         _preferredPreviewDeviceId = preferences.Current.EditPreviewDeviceId;
         _preferredPath = preferences.Current.EditClipPath;
@@ -94,6 +97,43 @@ public partial class ClipEditPanel : UserControl
         OnPreviewStoppedUi();
     }
 
+    private void ClipSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        ApplyClipFilter(preserveSelectedPath: SelectedClip?.Path);
+    }
+
+    private void ApplyClipFilter(string? preserveSelectedPath)
+    {
+        var filtered = ClipSearch.Filter(_allClips, ClipSearchBox.Text);
+        var selected = ResolveClip(filtered, preserveSelectedPath)
+                       ?? ResolveClip(_allClips, preserveSelectedPath);
+        if (selected is not null && ResolveClip(filtered, selected.Path) is null)
+        {
+            // Keep current selection visible even if it falls outside the filter.
+            filtered = filtered.Append(selected).ToList();
+        }
+
+        selected = ResolveClip(filtered, preserveSelectedPath) ?? filtered.FirstOrDefault();
+
+        _suppressSelectionHandler = selected is not null
+                                    && SelectedClip is not null
+                                    && string.Equals(selected.Path, SelectedClip.Path, StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            ClipCombo.ItemsSource = filtered;
+            ClipCombo.SelectedItem = selected;
+        }
+        finally
+        {
+            _suppressSelectionHandler = false;
+        }
+    }
+
     public void NotifyClipSaved(string path)
     {
         if (!_initialized)
@@ -115,50 +155,32 @@ public partial class ClipEditPanel : UserControl
 
     private void RefreshClips(string? preservePath = null, bool forceSelectPreferred = false)
     {
-        var clips = ClipLibrary.ListClips(_clipsDirectory);
+        _allClips = ClipLibrary.ListClips(_clipsDirectory);
         var previousPath = SelectedClip?.Path;
 
         ClipInfo? selected = null;
         if (forceSelectPreferred && !string.IsNullOrWhiteSpace(_preferredPath))
         {
-            selected = clips.FirstOrDefault(c =>
+            selected = _allClips.FirstOrDefault(c =>
                 string.Equals(c.Path, _preferredPath, StringComparison.OrdinalIgnoreCase));
         }
 
-        selected ??= ResolveClip(clips, preservePath)
-                     ?? ResolveClip(clips, previousPath)
-                     ?? clips.FirstOrDefault();
+        selected ??= ResolveClip(_allClips, preservePath)
+                     ?? ResolveClip(_allClips, previousPath)
+                     ?? _allClips.FirstOrDefault();
 
         _preferredPath = null;
+        ApplyClipFilter(preserveSelectedPath: selected?.Path);
 
-        var sameSelection = selected is not null
-                            && !string.IsNullOrWhiteSpace(previousPath)
-                            && string.Equals(selected.Path, previousPath, StringComparison.OrdinalIgnoreCase);
-
-        _suppressSelectionHandler = sameSelection
-                                    || (!forceSelectPreferred
-                                        && selected is not null
-                                        && string.Equals(selected.Path, preservePath, StringComparison.OrdinalIgnoreCase));
-        try
-        {
-            ClipCombo.ItemsSource = clips;
-            ClipCombo.SelectedItem = selected;
-        }
-        finally
-        {
-            _suppressSelectionHandler = false;
-        }
-
-        if (clips.Count == 0)
+        if (_allClips.Count == 0)
         {
             ResetEditor();
             SetStatus("No WAV clips found yet. Save a clip from Capture.");
         }
         else if (forceSelectPreferred)
         {
-            SetStatus($"Loaded {clips.Count} clip(s).");
+            SetStatus($"Loaded {_allClips.Count} clip(s).");
         }
-
     }
 
     private static ClipInfo? ResolveClip(IReadOnlyList<ClipInfo> clips, string? path)
@@ -363,10 +385,14 @@ public partial class ClipEditPanel : UserControl
             _stopPlayback?.Invoke();
             _preferredPreviewDeviceId = device.Id;
             PersistPreferences();
-            _previewPlayer.PlayRange(clip.Path, start, end, device.Id);
+            // Preview only — never pass a stream/secondary device.
+            _previewStart = start;
+            _previewDuration = end - start;
+            _previewPlayer.PlayRange(clip.Path, start, end, device.Id, secondaryOutputDeviceId: null);
             _previewTimer.Start();
             PreviewButton.Content = "Playing…";
-            SetStatus($"Preview trim → {device.FriendlyName} ({(end - start).TotalSeconds:0.##}s)");
+            UpdatePreviewTransportProgress();
+            SetStatus($"Preview trim → {device.FriendlyName} ({_previewDuration.TotalSeconds:0.##}s)");
         }
         catch (Exception ex)
         {
@@ -376,10 +402,33 @@ public partial class ClipEditPanel : UserControl
 
     private void StopPreview_Click(object sender, RoutedEventArgs e) => StopPreview();
 
+    private void UpdatePreviewTransportProgress()
+    {
+        if (_previewPlayer.State != PlaybackState.Playing)
+        {
+            OnPreviewStoppedUi();
+            return;
+        }
+
+        var elapsed = _previewPlayer.CurrentTime - _previewStart;
+        if (elapsed < TimeSpan.Zero)
+        {
+            elapsed = TimeSpan.Zero;
+        }
+
+        if (elapsed > _previewDuration)
+        {
+            elapsed = _previewDuration;
+        }
+
+        _reportTransportProgress?.Invoke(elapsed, _previewDuration, "Edit preview");
+    }
+
     private void OnPreviewStoppedUi()
     {
         _previewTimer.Stop();
         PreviewButton.Content = "Preview";
+        _clearTransportProgress?.Invoke();
     }
 
     private void DeleteClip_Click(object sender, RoutedEventArgs e)

@@ -48,9 +48,19 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        // Keep a fixed default size (do not stretch to the monitor work area).
+        WindowState = WindowState.Normal;
+        Height = 1060;
+        Width = 1280;
+
         Directory.CreateDirectory(_clipsDirectory);
         PlaybackPanel.Initialize(_clipsDirectory, _preferences, EditPanel.StopPreview);
-        EditPanel.Initialize(_clipsDirectory, _preferences, PlaybackPanel.StopPlayback);
+        EditPanel.Initialize(
+            _clipsDirectory,
+            _preferences,
+            stopPlayback: PlaybackPanel.StopPlayback,
+            reportTransportProgress: PlaybackPanel.ReportExternalPreviewProgress,
+            clearTransportProgress: PlaybackPanel.ClearExternalPreviewProgress);
         RefreshApps();
         ApplyBufferSeconds((int)Math.Round(BufferSlider.Value));
         PersistCapturePreferences();

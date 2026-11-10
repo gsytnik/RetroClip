@@ -11,20 +11,22 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+        <StackPanel Grid.Row="0" Margin="0,0,0,6">
             <TextBlock Text="Edit clip"
                        FontSize="20"
                        FontWeight="SemiBold"
                        Foreground="#7FFFD4"/>
             <TextBlock Style="{StaticResource MutedText}"
+                       FontSize="12"
                        Text="Pick a clip, fine-tune trim, save or delete."
-                       Margin="0,4,0,0"
+                       Margin="0,2,0,0"
                        TextWrapping="Wrap"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="0,0,0,10">
+        <Grid Grid.Row="1" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="110" MinWidth="80"/>
                 <ColumnDefinition Width="*" MinWidth="120"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -32,25 +34,33 @@
             <TextBlock Style="{StaticResource LabelText}"
                        Text="Clip"
                        VerticalAlignment="Center"
-                       Margin="0,0,10,0"/>
+                       Margin="0,0,8,0"/>
+            <TextBox x:Name="ClipSearchBox"
+                     Grid.Column="1"
+                     Style="{StaticResource CompactTextBox}"
+                     VerticalContentAlignment="Center"
+                     Margin="0,0,8,0"
+                     ToolTip="Search clips (case-insensitive)"
+                     TextChanged="ClipSearchBox_TextChanged"/>
             <ComboBox x:Name="ClipCombo"
-                      Grid.Column="1"
+                      Grid.Column="2"
+                      Style="{StaticResource CompactComboBox}"
                       DisplayMemberPath="FileName"
                       SelectionChanged="ClipCombo_SelectionChanged"/>
-            <Button Grid.Column="2"
+            <Button Grid.Column="3"
                     Content="Refresh"
-                    Style="{StaticResource PillButton}"
+                    Style="{StaticResource CompactPillButton}"
                     Margin="8,0,0,0"
                     Click="RefreshClips_Click"/>
-            <Button Grid.Column="3"
+            <Button Grid.Column="4"
                     Content="Delete"
-                    Style="{StaticResource PillButton}"
+                    Style="{StaticResource CompactPillButton}"
                     Margin="8,0,0,0"
                     Click="DeleteClip_Click"/>
         </Grid>
 
         <!-- Trim start | Trim end -->
-        <Grid Grid.Row="2" Margin="0,0,0,8">
+        <Grid Grid.Row="2" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="12"/>
@@ -58,12 +68,12 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <DockPanel Margin="0,0,0,4">
+                <DockPanel Margin="0,0,0,2">
                     <TextBlock Style="{StaticResource LabelText}" Text="Trim start" VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <TextBox x:Name="StartSecondsBox"
-                                 Width="64"
-                                 Padding="8,4"
+                                 Style="{StaticResource CompactTextBox}"
+                                 Width="56"
                                  LostFocus="StartSecondsBox_LostFocus"
                                  KeyDown="TrimSecondsBox_KeyDown"/>
                         <TextBlock Text="s" Style="{StaticResource MutedText}" Margin="6,0,0,0" VerticalAlignment="Center"/>
@@ -78,12 +88,12 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2">
-                <DockPanel Margin="0,0,0,4">
+                <DockPanel Margin="0,0,0,2">
                     <TextBlock Style="{StaticResource LabelText}" Text="Trim end" VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <TextBox x:Name="EndSecondsBox"
-                                 Width="64"
-                                 Padding="8,4"
+                                 Style="{StaticResource CompactTextBox}"
+                                 Width="56"
                                  LostFocus="EndSecondsBox_LostFocus"
                                  KeyDown="TrimSecondsBox_KeyDown"/>
                         <TextBlock Text="s" Style="{StaticResource MutedText}" Margin="6,0,0,0" VerticalAlignment="Center"/>
@@ -101,8 +111,8 @@
         <TextBlock x:Name="SelectionLabel"
                    Grid.Row="3"
                    Style="{StaticResource MutedText}"
-                   FontSize="12"
-                   Margin="0,0,0,10"
+                   FontSize="11"
+                   Margin="0,0,0,6"
                    Text="0.00s selected"/>
 
         <!-- Preview | Save as -->
@@ -114,43 +124,44 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <TextBlock Style="{StaticResource LabelText}" Text="Preview trim" Margin="0,0,0,6"/>
+                <TextBlock Style="{StaticResource LabelText}" Text="Preview trim" Margin="0,0,0,4"/>
                 <ComboBox x:Name="PreviewOutputCombo"
+                          Style="{StaticResource CompactComboBox}"
                           DisplayMemberPath="FriendlyName"
-                          Margin="0,0,0,8"
+                          Margin="0,0,0,6"
                           SelectionChanged="PreviewOutputCombo_SelectionChanged"/>
                 <WrapPanel>
                     <Button x:Name="PreviewButton"
                             Content="Preview"
-                            Style="{StaticResource AccentPillButton}"
+                            Style="{StaticResource CompactAccentPillButton}"
                             Click="Preview_Click"
-                            MinWidth="90"
+                            MinWidth="84"
                             Margin="0,0,8,0"/>
                     <Button Content="Stop"
-                            Style="{StaticResource PillButton}"
+                            Style="{StaticResource CompactPillButton}"
                             Click="StopPreview_Click"
-                            MinWidth="72"/>
+                            MinWidth="64"/>
                 </WrapPanel>
             </StackPanel>
 
             <StackPanel Grid.Column="2">
-                <DockPanel Margin="0,0,0,6" LastChildFill="False">
+                <DockPanel Margin="0,0,0,4" LastChildFill="False">
                     <TextBlock Style="{StaticResource LabelText}"
                                Text="Save as"
                                VerticalAlignment="Center"/>
                     <CheckBox x:Name="DeleteOriginalCheck"
                               Content="Delete original"
-                              Margin="20,0,0,0"
+                              Margin="16,0,0,0"
                               VerticalAlignment="Center"/>
                 </DockPanel>
-                <Grid Margin="0,0,0,8">
+                <Grid Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="SaveNameBox"
                              Grid.Column="0"
-                             Padding="8,6"
+                             Style="{StaticResource CompactTextBox}"
                              VerticalAlignment="Center"/>
                     <TextBlock Grid.Column="1"
                                Text=".wav"
@@ -159,10 +170,10 @@
                                Margin="8,0,0,0"/>
                 </Grid>
                 <Button Content="Save trimmed"
-                        Style="{StaticResource PillButton}"
+                        Style="{StaticResource CompactPillButton}"
                         HorizontalAlignment="Left"
                         Click="SaveTrimmed_Click"
-                        MinWidth="110"/>
+                        MinWidth="100"/>
             </StackPanel>
         </Grid>
 
@@ -170,8 +181,8 @@
                    Grid.Row="5"
                    TextWrapping="Wrap"
                    Style="{StaticResource MutedText}"
-                   FontSize="12"
-                   Margin="0,10,0,0"
+                   FontSize="11"
+                   Margin="0,6,0,0"
                    Text="Select a clip to edit."/>
     </Grid>
 </UserControl>

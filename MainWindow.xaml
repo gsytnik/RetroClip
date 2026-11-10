@@ -3,10 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:RetroClip"
         Title="RetroClip"
-        Height="1040"
+        Height="1060"
         Width="1280"
         MinHeight="900"
         MinWidth="1100"
+        WindowState="Normal"
+        ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         Background="#1F1F1F"
         Foreground="#F3F1ED"
@@ -16,21 +18,24 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*" MinHeight="320"/>
-                <RowDefinition Height="16"/>
-                <RowDefinition Height="*" MinHeight="300"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="0.82*" MinHeight="260"/>
+                <RowDefinition Height="12"/>
+                <RowDefinition Height="1.18*" MinHeight="320"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <DockPanel Grid.Row="0" Margin="0,0,0,12" LastChildFill="True">
+                <TextBlock DockPanel.Dock="Right"
+                           Style="{StaticResource MutedText}"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Margin="16,0,0,0"
+                           Text="Hotkey: Ctrl+Shift+R · Saves to Music\RetroClip"/>
                 <TextBlock Text="RetroClip"
                            FontSize="28"
                            FontWeight="SemiBold"
-                           Foreground="#7FFFD4"/>
-                <TextBlock Style="{StaticResource MutedText}"
-                           Text="Capture + edit on top · playback / stream below"
-                           Margin="0,4,0,0"/>
-            </StackPanel>
+                           Foreground="#7FFFD4"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
 
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
@@ -45,7 +50,7 @@
                         BorderBrush="#3D3D3D"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="18">
+                        Padding="14">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -56,7 +61,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <StackPanel Grid.Row="0" Margin="0,0,0,8">
                             <TextBlock Text="Capture"
                                        FontSize="20"
                                        FontWeight="SemiBold"
@@ -171,7 +176,7 @@
                         BorderBrush="#3D3D3D"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="18">
+                        Padding="14">
                     <local:ClipEditPanel x:Name="EditPanel"/>
                 </Border>
             </Grid>
@@ -185,12 +190,6 @@
                     Padding="18">
                 <local:ClipPlaybackPanel x:Name="PlaybackPanel"/>
             </Border>
-
-            <TextBlock Grid.Row="4"
-                       Style="{StaticResource MutedText}"
-                       FontSize="12"
-                       Margin="0,14,0,0"
-                       Text="Hotkey: Ctrl+Shift+R · Saves to Music\RetroClip"/>
         </Grid>
     </Border>
 </Window>
