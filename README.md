@@ -1,0 +1,1 @@
+This is an app I made for personal use and friends, entirely vibe-coded. The only goal is for the app to work and fulfill the needs we have, so the work is **NOT** representative of what I would normally produce if I was also looking for code quality, solid architectural and design decisions.
