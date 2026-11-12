@@ -48,8 +48,8 @@ public sealed class SoundboardStore
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, SlotCount);
 
+        // Working board only — persist happens on Save (typed name, else selected).
         _slots[index] = string.IsNullOrWhiteSpace(path) ? null : path;
-        PersistActivePreset();
     }
 
     public bool LoadPreset(string name)
@@ -74,6 +74,7 @@ public sealed class SoundboardStore
             return false;
         }
 
+        // Write working board to exactly one preset name.
         _presets[key] = CloneSlots(_slots);
         _activePresetName = key;
         SaveFile();
@@ -101,12 +102,6 @@ public sealed class SoundboardStore
         }
 
         return true;
-    }
-
-    private void PersistActivePreset()
-    {
-        _presets[_activePresetName] = CloneSlots(_slots);
-        SaveFile();
     }
 
     private void Load()

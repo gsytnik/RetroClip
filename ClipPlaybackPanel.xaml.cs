@@ -222,17 +222,23 @@ public partial class ClipPlaybackPanel : UserControl
         SoundboardPresetNameBox.Text = string.Empty;
     }
 
-    private string? GetSoundboardPresetNameFromUi()
+    private string? GetTypedSoundboardPresetName()
     {
         var typed = SoundboardPresetNameBox.Text?.Trim();
-        if (!string.IsNullOrWhiteSpace(typed))
-        {
-            return typed;
-        }
+        return string.IsNullOrWhiteSpace(typed) ? null : typed;
+    }
 
+    private string? GetSelectedSoundboardPresetName()
+    {
         return SoundboardPresetPickCombo.SelectedItem as string is { Length: > 0 } selected
             ? selected.Trim()
             : null;
+    }
+
+    private string? GetSoundboardPresetNameFromUi()
+    {
+        // Typed overrides selection when present (Load/Delete/Save).
+        return GetTypedSoundboardPresetName() ?? GetSelectedSoundboardPresetName();
     }
 
     private void SoundboardPresetLoad_Click(object sender, RoutedEventArgs e)
@@ -269,11 +275,12 @@ public partial class ClipPlaybackPanel : UserControl
             return;
         }
 
-        // Typed name creates/overwrites that preset; empty box saves into the selected preset.
-        var name = GetSoundboardPresetNameFromUi();
+        var typed = GetTypedSoundboardPresetName();
+        var selected = GetSelectedSoundboardPresetName();
+        var name = typed ?? selected;
         if (string.IsNullOrWhiteSpace(name))
         {
-            SetStatus("Type a new preset name, or pick a preset to overwrite.", isError: true);
+            SetStatus("Type a preset name, or pick one to overwrite.", isError: true);
             return;
         }
 
@@ -285,7 +292,8 @@ public partial class ClipPlaybackPanel : UserControl
 
         ClearSoundboardPresetNameBox();
         RefreshSoundboardPresetCombo();
-        SetStatus($"Saved soundboard preset “{name}”.");
+        var how = typed is not null ? "typed name" : "selected preset";
+        SetStatus($"Saved soundboard preset “{name}” ({how} only).");
     }
 
     private void SoundboardPresetDelete_Click(object sender, RoutedEventArgs e)
